@@ -1,0 +1,4 @@
+# Larang eksekusi skrip PHP di folder upload (keamanan)
+<FilesMatch "\.(php|phtml|phar)$">
+  Require all denied
+</FilesMatch>
