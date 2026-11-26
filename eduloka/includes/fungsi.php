@@ -1,28 +1,8 @@
 <?php
-// FILE INTI EduLoka, dipakai hampir semua halaman.
-// Isinya fungsi bantu: sesi login, query database yang aman, hak akses, pesan notifikasi,
-// perlindungan CSRF, upload berkas, dan potongan tampilan yang dipakai berulang.
-// Semua halaman cukup menulis: require_once includes/fungsi.php (lalu fungsi di bawah siap dipakai).
-// Fungsi bantu EduLoka: sesi, query aman, flash, CSRF, upload, tampilan bersama.
-// Mulai SESI kalau belum dimulai. Sesi adalah memori di server untuk mengingat siapa yang sedang login.
 if (session_status() === PHP_SESSION_NONE) session_start();
-// Hubungkan ke database. Variabel $koneksi dari file itu dipakai oleh fungsi q() di bawah.
 require_once __DIR__ . "/../config/koneksi.php";
-
-// Awalan path: "../" bila halaman berada di folder admin/
-// $BASE = awalan alamat untuk tautan/gambar. Halaman di folder admin/ butuh ../ supaya menemukan folder assets/, dan halaman utama cukup string kosong.
 $BASE = (basename(dirname($_SERVER['SCRIPT_NAME'])) === 'admin') ? '../' : '';
-
-// e() = singkatan dari htmlspecialchars. Mengubah karakter berbahaya (< > tanda kutip) menjadi teks biasa
-// sebelum dicetak ke halaman. WAJIB dipakai untuk data dari pengguna agar kebal serangan XSS (script jahat).
 function e($teks) { return htmlspecialchars((string)$teks, ENT_QUOTES, 'UTF-8'); }
-
-/* ---------- Database (prepared statement, anti SQL injection) ---------- */
-// q() = jalankan query SQL dengan PREPARED STATEMENT (anti SQL injection).
-// Contoh: q(SELECT * FROM kursus WHERE id_kursus=?, i, 5)
-//   $sql  = SQL dengan tanda tanya (?) sebagai tempat nilai
-//   $tipe = tipe tiap nilai: s = teks, i = angka bulat (urut sesuai tanda tanya)
-//   $param = nilainya. Nilai dikirim terpisah dari SQL sehingga tidak bisa menyuntikkan perintah SQL.
 function q($sql, $tipe = "", ...$param) {
     global $koneksi;
     $st = mysqli_prepare($koneksi, $sql);
@@ -41,13 +21,7 @@ function satu($sql, $tipe = "", ...$param) {
     $a = semua($sql, $tipe, ...$param);
     return $a[0] ?? null;
 }
-
-/* ---------- Sesi & hak akses ---------- */
-// Data pengguna yang sedang login (id, username, peran) dari sesi. Mengembalikan null kalau belum login.
 function pengguna() { return $_SESSION['pengguna'] ?? null; }
-// PENJAGA HALAMAN. Panggil di awal halaman yang butuh login.
-//   wajib_masuk()          = cukup sudah login
-//   wajib_masuk(admin)     = hanya peran tertentu (bisa juga array beberapa peran)
 function wajib_masuk($peran = null) {
     global $BASE;
     $p = pengguna();
@@ -59,15 +33,12 @@ function wajib_masuk($peran = null) {
 }
 // flash() = simpan pesan notifikasi di sesi. Pesan tampil SEKALI di halaman berikutnya (setelah redirect).
 function flash($pesan, $jenis = "ok") { $_SESSION['flash'] = [$pesan, $jenis]; }
-// Cetak pesan notifikasi (kalau ada) lalu hapus dari sesi supaya tidak muncul lagi.
 function tampil_flash() {
     if (!empty($_SESSION['flash'])) {
         [$m, $j] = $_SESSION['flash']; unset($_SESSION['flash']);
         echo "<div class='flash $j' role='status'>" . e($m) . "</div>";
     }
 }
-// Buat input tersembunyi berisi token acak. Setiap form POST wajib menyertakannya (CSRF = serangan yang memaksa
-// pengguna mengirim form tanpa sadar). Token disimpan di sesi dan dicocokkan lagi oleh csrf_cek().
 function csrf_field() {
     if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
     return "<input type='hidden' name='csrf' value='{$_SESSION['csrf']}'>";
@@ -85,17 +56,12 @@ function catat($aksi, $ket = "") {
     q("INSERT INTO log_aktivitas (id_pengguna, aksi, keterangan) VALUES (?,?,?)", "iss", $p['id'] ?? null, $aksi, $ket);
 }
 
-/* ---------- Berkas ---------- */
-// Buku awal menyimpan tautan https penuh, buku hasil upload menyimpan path lokal. Fungsi ini menyamakan keduanya menjadi alamat yang bisa dibuka.
 function url_berkas($p) { global $BASE; return preg_match('~^https?://~', $p) ? $p : $BASE . $p; }
 // Hapus berkas upload dari folder uploads/ (abaikan kalau isinya tautan https atau kosong).
 function hapus_berkas($p) {
     if ($p && !preg_match('~^https?://~', $p)) { $f = __DIR__ . "/../" . $p; if (is_file($f)) unlink($f); }
 }
-// Kembalikan [path, pesanError]. $boleh: ['pdf' => ['application/pdf']]
-// unggah() = proses upload dengan pemeriksaan keamanan. Hasil: [path berkas, pesan error].
-//   $field = nama input file di form;  $boleh = ekstensi dan jenis MIME yang diizinkan;
-//   $maks = batas ukuran (byte);  $folder = subfolder tujuan di uploads/;  $wajib = berkas harus ada atau tidak.
+
 function unggah($field, $boleh, $maks, $folder, $wajib = false) {
     if (empty($_FILES[$field]['name'])) return [null, $wajib ? "Berkas wajib dipilih." : null];
     $f = $_FILES[$field];
@@ -115,8 +81,7 @@ const TIPE_PDF = ['pdf' => ['application/pdf']];
 // Daftar jenis berkas yang diizinkan: gambar JPG, PNG, WebP.
 const TIPE_GAMBAR = ['jpg' => ['image/jpeg'], 'jpeg' => ['image/jpeg'], 'png' => ['image/png'], 'webp' => ['image/webp']];
 
-/* ---------- Tampilan bersama ---------- */
-// Ubah tanggal 2026-11-21 menjadi bentuk Indonesia: 21 Nov 2026.
+
 function tgl_id($t) {
     $b = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     $x = strtotime($t);
@@ -134,7 +99,6 @@ function kartu_buku($b) {
     echo "<a class='btn' href='{$BASE}detail.php?id=$id'>Lihat detail</a></article>";
 }
 
-/* ---------- Pemesanan bimbingan (dipakai jadwal, riwayat, admin) ---------- */
 // Ambil daftar pemesanan bimbingan lengkap dengan nama siswa, nama mentor, dan tautan meeting.
 // Parameter $where bisa diisi syarat tambahan (pakai ? untuk nilai), mis. b.id_siswa=?. Dipakai jadwal, riwayat, dan admin.
 function daftar_pemesanan($where = "1=1", $tipe = "", ...$param) {
