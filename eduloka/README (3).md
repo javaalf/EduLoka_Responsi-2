@@ -3,6 +3,11 @@ Portal akses belajar dan bimbingan belajar kolaboratif, mendukung *SDGs ke-4: Pe
 Siswa SD/MI dapat mengunduh buku teks resmi Kemendikdasmen (SIBI), memesan sesi bimbingan dengan mentor relawan, dan bertanya di forum.
 Proyek akhir *Responsi Pemrograman Web I*.
 
+# Pembagian jobdesk
+1. Java Alfanza Setiawan (H1D025006) : backend
+2. Fahri Hafi (H1D025016) : UI/UX
+3. Salsa Nur Fadhilah (H1D025045) : frontend
+
 # Latar Belakang
 Pemerataan akses bimbingan belajar dan materi pendukung masih terkendala faktor finansial serta geografis bagi pelajar, sementara banyak relawan dan pendidik belum memiliki wadah digital yang terpusat untuk berbagi ilmu. EduLoka hadir sebagai portal akses belajar dan bimbingan kolaboratif berbasis web untuk mempertemukan pelajar dengan mentor atau relawan secara terstruktur dan mudah diakses, sejalan dengan SDGs ke-4 (Pendidikan Berkualitas).
 
