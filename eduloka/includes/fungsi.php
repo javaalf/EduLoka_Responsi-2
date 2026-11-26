@@ -6,7 +6,12 @@ function e($teks) { return htmlspecialchars((string)$teks, ENT_QUOTES, 'UTF-8');
 function q($sql, $tipe = "", ...$param) {
     global $koneksi;
     $st = mysqli_prepare($koneksi, $sql);
-    if ($tipe !== "") mysqli_stmt_bind_param($st, $tipe, ...$param);
+    if (!$st) {
+        throw new RuntimeException("Gagal menyiapkan query: " . mysqli_error($koneksi));
+    }
+    if ($tipe !== "") {
+        mysqli_stmt_bind_param($st, $tipe, ...$param);
+    }
     mysqli_stmt_execute($st);
     $hasil = mysqli_stmt_get_result($st);
     return $hasil ?: $st;
